@@ -21,6 +21,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           port: 5000,
         },
       },
+      {
+        name: 'Audit-Service',
+        transport: Transport.TCP,
+        options: {
+          host: '127.0.0.1',
+          port: 7000,
+        },
+      },
     ]),
     AuthModule,
     ConfigModule,

@@ -38,4 +38,13 @@ export class RequestsController {
     }
     return this.requestsService.acceptRequest(requestId, status);
   }
+
+  @MessagePattern({ cmd: 'rejectRequest' })
+  async rejectRequest(@Payload() data: any) {
+    const { requestId } = data;
+    if (!requestId) {
+      throw new UnauthorizedException('Request ID is required');
+    }
+    return this.requestsService.rejectRequest(requestId);
+  }
 }

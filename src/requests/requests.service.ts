@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Requests, RequestsDocument } from './entity/requests.entity';
 import { Model } from 'mongoose';
@@ -17,6 +12,7 @@ export class RequestsService {
     @InjectModel(Requests.name) private RequestsModel: Model<RequestsDocument>,
     @Inject('Messages-Service')
     private readonly conversationClient: ClientProxy,
+    @Inject('Audit-Service') private readonly auditClient: ClientProxy,
   ) {}
 
   async verifyToken(token: string): Promise<string> {
@@ -35,7 +31,10 @@ export class RequestsService {
   }
 
   async getMyRequests(username: string): Promise<RequestsDocument[]> {
-    return this.RequestsModel.find({ receiver: username }).exec();
+    return this.RequestsModel.find({
+      receiver: username,
+      status: 'pending',
+    }).exec();
   }
 
   async acceptRequest(
@@ -50,16 +49,29 @@ export class RequestsService {
     if (!request) {
       throw new NotFoundException('Request Not Found');
     }
-      if (status === 'accepted') {
-          console.log('Emitting create-conversation event', {
-              user1: request.sender,
-              user2: request.receiver,
-          });
-          this.conversationClient.emit('create-conversation', {
-              user1: request.sender,
-              user2: request.receiver,
-          });
-      }
-      return request;
+    if (status === 'accepted') {
+      ({
+        user1: request.sender,
+        user2: request.receiver,
+      });
+      this.conversationClient.emit('create-conversation', {
+        user1: request.sender,
+        user2: request.receiver,
+      });
+    }
+    return request;
+  }
+
+  async rejectRequest(requestId: string): Promise<void> {
+    const request = await this.RequestsModel.findById(requestId).exec();
+    if (!request) {
+      throw new NotFoundException('Request Not Found');
+    }
+    this.auditClient.emit('audit-log', {
+      requestId,
+      rejectedBy: request.receiver,
+      timestamp: new Date().toISOString(),
+    });
+    await this.RequestsModel.findByIdAndDelete(requestId).exec();
   }
 }
