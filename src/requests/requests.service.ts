@@ -25,7 +25,11 @@ export class RequestsService {
     return username;
   }
 
-  async sendRequest(requestsDto: RequestsDto): Promise<RequestsDocument> {
+  async sendRequest(requestsDto: RequestsDto): Promise<RequestsDocument | string> {
+    const existingRequest = await this.RequestsModel.findOne({sender: requestsDto.sender, receiver: requestsDto.receiver, status: 'pending'}).exec();
+    if(existingRequest) {
+      throw new Error('Request Already Exists And Is Pending.');
+    }
     const sendRequest = new this.RequestsModel(requestsDto);
     return sendRequest.save();
   }
@@ -37,23 +41,15 @@ export class RequestsService {
     }).exec();
   }
 
-  async acceptRequest(
-    requestId: string,
-    status: string,
-  ): Promise<RequestsDocument> {
-    const request = await this.RequestsModel.findByIdAndUpdate(
-      requestId,
-      { status },
-      { new: true },
-    ).exec();
+  async acceptRequest(requestId: string, status: string,): Promise<RequestsDocument> {
+    const request = await this.RequestsModel.findByIdAndUpdate(requestId, { status }, { new: true },).exec();
+
     if (!request) {
       throw new NotFoundException('Request Not Found');
     }
+
     if (status === 'accepted') {
-      ({
-        user1: request.sender,
-        user2: request.receiver,
-      });
+      ({user1: request.sender, user2: request.receiver,});
       this.conversationClient.emit('create-conversation', {
         user1: request.sender,
         user2: request.receiver,
