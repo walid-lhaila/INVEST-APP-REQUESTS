@@ -26,23 +26,22 @@ export class RequestsService {
   }
 
   async sendRequest(requestsDto: RequestsDto): Promise<RequestsDocument | string> {
-    const existingRequest = await this.RequestsModel.findOne({sender: requestsDto.sender, receiver: requestsDto.receiver, status: 'pending'}).exec();
+    const existingRequest = await this.RequestsModel.findOne({sender: requestsDto.sender, receiver: requestsDto.receiver, status: 'pending'});
     if(existingRequest) {
       throw new Error('Request Already Exists And Is Pending.');
     }
-    const sendRequest = new this.RequestsModel(requestsDto);
-    return sendRequest.save();
+    return this.RequestsModel.create(requestsDto);
   }
 
   async getMyRequests(username: string): Promise<RequestsDocument[]> {
     return this.RequestsModel.find({
       receiver: username,
       status: 'pending',
-    }).exec();
+    });
   }
 
   async acceptRequest(requestId: string, status: string,): Promise<RequestsDocument> {
-    const request = await this.RequestsModel.findByIdAndUpdate(requestId, { status }, { new: true },).exec();
+    const request = await this.RequestsModel.findByIdAndUpdate(requestId, { status }, { new: true },);
 
     if (!request) {
       throw new NotFoundException('Request Not Found');
@@ -59,7 +58,7 @@ export class RequestsService {
   }
 
   async rejectRequest(requestId: string): Promise<void> {
-    const request = await this.RequestsModel.findById(requestId).exec();
+    const request = await this.RequestsModel.findById(requestId);
     if (!request) {
       throw new NotFoundException('Request Not Found');
     }
@@ -68,6 +67,6 @@ export class RequestsService {
       rejectedBy: request.receiver,
       timestamp: new Date().toISOString(),
     });
-    await this.RequestsModel.findByIdAndDelete(requestId).exec();
+    await this.RequestsModel.findByIdAndDelete(requestId);
   }
 }
