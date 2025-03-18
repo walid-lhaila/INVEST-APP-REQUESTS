@@ -17,16 +17,16 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'Messages-Service',
         transport: Transport.TCP,
         options: {
-          host: '127.0.0.1',
-          port: 5000,
+          host: 'messages',
+          port: 3004,
         },
       },
       {
         name: 'Audit-Service',
         transport: Transport.TCP,
         options: {
-          host: '127.0.0.1',
-          port: 7000,
+          host: 'audit',
+          port: 3005,
         },
       },
     ]),

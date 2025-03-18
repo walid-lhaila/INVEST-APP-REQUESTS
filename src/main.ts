@@ -10,12 +10,12 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: '127.0.0.1',
-        port: 6000,
+        host: '0.0.0.0',
+        port: 3008,
       },
     },
   );
   await app.listen();
-  console.log('REQUESTS SERVICE is running on: http://localhost:6000');
+  console.log('REQUESTS SERVICE is running on: http://localhost:3008');
 }
 bootstrap();
